@@ -1,0 +1,203 @@
+# 腾讯云源码安装Nginx1.12.0+php7.1.4
+&emsp;&emsp; 基于云服务的发展，云服务器以其快速搭建，方便的拓展服务器集群及其比实体服务集群的廉价性广受各个公司的喜爱，故本次搭建服务器为腾讯云服务器。当然本文所写安装，配置在单机、虚拟机（VMware等）、搭建服务器集群均可供参考借鉴，也谨防博主忘记，作为备忘。文中所写有博主亲身实践的错误及注意事项。
+
+-------
+
+## 安装前期
+ &emsp;&emsp; 本次使用的是centos7.2（默认仅有64位系统）版本。本教程默认您的linux版本为最小化安装,首先我们要先确认系统的字符集环境,在命令行输入`echo $LANG`若不是UTF-8，则我们需要编辑本地环境`vi /etc/locale.conf`删掉之前默认设置，输入下列代码：
+ 
+ ```bash
+LANG="en_US.UTF-8"
+ #en_US是指默认语言为英语，UTF-8为通用字符集
+ ```
+ &emsp;&emsp; 安装必备的开发工具包：
+
+```bash
+ yum -y groupinstall Base "Development Tools"
+```
+
+&emsp;&emsp; 还要安装一些必备的软件和库以支持我们要安装的服务器软件：
+
+```bash
+yum -y install gcc gcc-c++ autoconf libjpeg libjpeg-devel libpng libpng-devel freetype freetype-devel libxml2 libxml2-devel zlib zlib-devel glibc glibc-devel glib2 glib2-devel bzip2 bzip2-devel ncurses ncurses-devel pcre curl curl-devel e2fsprogs e2fsprogs-devel libidn libidn-devel openssl openssl-devel libevent ImageMagick ImageMagick-devel libevent-devel libmcrypt libmcrypt-devel mhash mhash-devel mcrypt python-pip cyrus-sasl cyrus-sasl-devel libgearman libgearman-devel boost-devel gperf libuuid-devel hiredis-devel graphviz-devel
+```
+
+&emsp;&emsp; 接下来就是我们的主角登场了，nginx和php。我们选择了最新的稳定版nginx1.12.0和php7.1.4，值得一提，nginx的1.12.0版本已经可以支持http2.0 [^footnote] 协议，
+[^footnote]: 想对http2.0有更深的了解可以转至[HTTP2.0的奇妙日常](http://www.alloyteam.com/2015/03/http2-0-di-qi-miao-ri-chang/)。
+&emsp;&emsp; 一个好的习惯是将我们需要安装的软件源码包放置在一个固定区域，以便日后的寻找,这也是一个运维人的基本素养。我习惯将软件包放置在**/usr/local/src**下，通过下面的命令创建并进入**/usr/local/src**目录。
+
+```bash
+mkdir /usr/local/src && cd /usr/local/src 
+```
+
+&emsp;&emsp; 现在我们要下载nginx和php的源码包。
+
+```bash
+wget http://nginx.org/download/nginx-1.12.0.tar.gz && wget http://cn2.php.net/distributions/php-7.1.4.tar.gz 
+```
+&emsp;&emsp; 但是我们为了让php支持更多的编码，还需要安装libiconv包,我们通过：
+
+```bash
+wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz
+```
+
+&emsp;&emsp; 至此我们的准备工作就完成了。接下来我们就开始安装了。
+
+-------
+## 安装php
+#### 1.安装libiconv库
+
+```bash
+cd /usr/local/src 
+tar zxvf libiconv-1.15.tar.gz
+cd libiconv-1.15/
+./configure --prefix=/usr/local
+make && make install
+```
+
+&emsp;&emsp; 安装好了之后，我们还需要将libiconv加入动态库环境中，自建一个动态库配置文件。
+
+```bash
+vi /etc/ld.so.conf.d/libiconv.conf
+```
+&emsp;&emsp; 文件中输入：
+
+```conf
+/usr/local/lib
+```
+
+&emsp;&emsp; 退出该文件，并在命令行执行`ldconfig`重新读取下配置文件。
+
+#### 2.安装php
+首先安装php，我们需要添加编译参数，注意`--with-fpm-user=wwwdata --with-fpm-group=wwwdata`此处是配置php-fpm的用户和用户组，若本机中没有`wwwdata`的用户和用户组，则要先添加用户和用户组：
+
+```bash
+groupadd wwwdata
+useradd -g wwwdata wwwdata -M
+cd /usr/local/src
+tar zxvf php-7.1.4.tar.gz
+cd php-7.1.4/
+mkdir /usr/local/php-7.1.4/
+./configure --prefix=/usr/local/php-7.1.4 --with-config-file-path=/usr/local/php-7.1.4/etc --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-iconv-dir=/usr/local --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --enable-mbregex --enable-fpm --with-fpm-user=wwwdata --with-fpm-group=wwwdata --enable-mbstring --with-mcrypt --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap
+make && make install
+```
+
+
+&emsp;&emsp; 安装之后我们需要设置配置文件,由于php已经有预设的配置文档所以我们之间采用预设配置，视情况您可以自己修改配置文档。
+
+```bash
+mv /usr/local/src/php-7.1.4/php.ini-production  /usr/local/php-7.1.4/etc/php.ini
+cd /usr/local/php-7.1.4/etc
+mv php-fpm.conf.default php-fpm.conf
+mv ./php-fpm.d/www.conf.default ./php-fpm.d/www.conf
+```
+&emsp;&emsp; 至此php和php-fpm（用于和web服务器，如nginx等服务器连接）都已经安装并配置好了。
+
+----
+#### 3.安装并配置nginx
+我们先来解压安装nginx，我们注意到`--user=www --group=www`，同理我们首先创建名为www的用户及用户组，然后再编译安装nginx。
+
+```bash
+groupadd www
+useradd -g www www -M
+cd /usr/local/src
+tar zxvf nginx-1.12.0.tar.gz
+cd nginx-1.12.0/
+./configure --user=www --group=www --prefix=/usr/local/nginx-1.12.0 --with-http_stub_status_module --with-http_ssl_module
+make && make install
+```
+安装完成后，我们还需要配置nginx的配置文件`vi  /usr/local/nginx-1.12.0/conf/nginx.conf`，按照以下配置文件内容进行配置。
+
+
+```bash
+#user 要和刚刚编译安装时的参数:"--user=www --group=www"对应
+user  www www;
+worker_processes  8;
+worker_rlimit_nofile 65535;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+error_log  /data/logs/nginx_error.log  crit;
+
+pid        /usr/local/nginx-1.12.0/nginx.pid;
+events
+{
+  use epoll;
+  worker_connections 65535;
+}
+
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    server_names_hash_bucket_size 128;
+    client_header_buffer_size 32k;
+    large_client_header_buffers 4 32k;
+    client_max_body_size 8m;
+    sendfile        on;
+    #keepalive_timeout  0;
+    keepalive_timeout  60;
+    tcp_nopush     on;
+    fastcgi_connect_timeout 300;
+    fastcgi_send_timeout 300;
+    fastcgi_read_timeout 300;
+    fastcgi_buffer_size 64k;
+    fastcgi_buffers 4 64k;
+    fastcgi_busy_buffers_size 128k;
+    fastcgi_temp_file_write_size 128k;
+    
+    gzip  on;
+    gzip_min_length  1k;
+    gzip_buffers     4 16k;
+    gzip_http_version 1.0;
+    gzip_comp_level 2;
+    gzip_types       text/plain application/x-javascript text/css application/xml;
+    gzip_vary on;
+    log_format  page  '\$remote_addr - \$remote_user [\$time_local] [\$request_time] "\$request"'
+              '\$status \$body_bytes_sent "\$http_referer"'
+              '"\$http_user_agent" \$http_x_forwarded_for';
+    access_log  /mydata/logs/page.log  page;
+    
+       
+    server {
+        listen       80;
+        server_name  localhost;
+        root           /data/www/pages;
+        #charset koi8-r;
+        index  index.html index.php index.htm;
+
+        location ~ .*\.(php|php5)$ {
+              fastcgi_pass   127.0.0.1:9000;
+              fastcgi_index  index.php;
+              fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+              include        fastcgi_params;
+        }
+
+            location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$ {
+               expires      30d;
+           }
+ 
+
+         location ~ .*\.(js|css)?$ {
+             expires      1h;
+        }
+
+         location /nginx_status {
+             stub_status on;
+             access_log   off;
+            }
+     }
+ }
+```
+安装完后，我们需要测试配置文件是否正确`/usr/local/nginx-1.12.0/sbin/nginx -t` 如下显示表示配置文件成功
+
+![](media/14926676625028/14932869263238.jpg)
+### 启动、测试php+nginx
+&emsp;&emsp; 运行php-fpm,使用 `/usr/local/php-7.1.4/sbin/php-fpm` 我们只需要通过`netstat -tunlp |grep php-fpm|grep -v grep`就可以看到
+![](media/14926676625028/14932887644685.jpg)
+&emsp;&emsp; 这样的查询方式是很有用的，尤其是查询服务端口，进程（同常我们都是通过ps查询进程，但用这个也可看到，796就是我现在php-fpm的进程号），以及服务是否监听了端口。
+&emsp;&emsp; 运行nginx，我们通过`/usr/local/nginx-1.12.0/sbin/nginx`就可以开启nginx，同理我们查看端口是否被监听（nginx默认80端口）：![](media/14926676625028/14932891024213.jpg)
+
+
+
