@@ -4,11 +4,254 @@
     <title>Clean portfolio theme for Jekyll powered by Bootstrap 4.</title>
     <description>New Site
 </description>
-    <link>http://example.com/</link>
-    <atom:link href="http://example.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 03 Dec 2018 13:25:45 +0800</pubDate>
-    <lastBuildDate>Mon, 03 Dec 2018 13:25:45 +0800</lastBuildDate>
+    <link>http://localhost:4000/</link>
+    <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Mon, 03 Dec 2018 13:58:49 +0800</pubDate>
+    <lastBuildDate>Mon, 03 Dec 2018 13:58:49 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>腾讯云源码安装Nginx1.12.0+php7.1.4</title>
+        <description>&lt;h1 id=&quot;腾讯云源码安装nginx1120php714&quot;&gt;腾讯云源码安装Nginx1.12.0+php7.1.4&lt;/h1&gt;
+&lt;p&gt;   基于云服务的发展，云服务器以其快速搭建，方便的拓展服务器集群及其比实体服务集群的廉价性广受各个公司的喜爱，故本次搭建服务器为腾讯云服务器。当然本文所写安装，配置在单机、虚拟机（VMware等）、搭建服务器集群均可供参考借鉴，也谨防博主忘记，作为备忘。文中所写有博主亲身实践的错误及注意事项。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;安装前期&quot;&gt;安装前期&lt;/h2&gt;
+&lt;p&gt;   本次使用的是centos7.2（默认仅有64位系统）版本。本教程默认您的linux版本为最小化安装,首先我们要先确认系统的字符集环境,在命令行输入&lt;code class=&quot;highlighter-rouge&quot;&gt;echo $LANG&lt;/code&gt;若不是UTF-8，则我们需要编辑本地环境&lt;code class=&quot;highlighter-rouge&quot;&gt;vi /etc/locale.conf&lt;/code&gt;删掉之前默认设置，输入下列代码：&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;LANG&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;en_US.UTF-8&quot;&lt;/span&gt;
+ &lt;span class=&quot;c&quot;&gt;#en_US是指默认语言为英语，UTF-8为通用字符集&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;   安装必备的开发工具包：&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; yum &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; groupinstall Base &lt;span class=&quot;s2&quot;&gt;&quot;Development Tools&quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href=&quot;media/14926676625028/%E8%85%BE%E8%AE%AF%E4%BA%91%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85Nginx1.12.0+php7.1.4.html&quot;&gt;腾讯云源码安装Nginx1.12.0+php7.1.4&lt;/a&gt;
+   还要安装一些必备的软件和库以支持我们要安装的服务器软件：&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;yum &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;gcc gcc-c++ autoconf libjpeg libjpeg-devel libpng libpng-devel freetype freetype-devel libxml2 libxml2-devel zlib zlib-devel glibc glibc-devel glib2 glib2-devel bzip2 bzip2-devel ncurses ncurses-devel pcre curl curl-devel e2fsprogs e2fsprogs-devel libidn libidn-devel openssl openssl-devel libevent ImageMagick ImageMagick-devel libevent-devel libmcrypt libmcrypt-devel mhash mhash-devel mcrypt python-pip cyrus-sasl cyrus-sasl-devel libgearman libgearman-devel boost-devel gperf libuuid-devel hiredis-devel graphviz-devel
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;   接下来就是我们的主角登场了，nginx和php。我们选择了最新的稳定版nginx1.12.0和php7.1.4，值得一提，nginx的1.12.0版本已经可以支持http2.0 [^footnote] 协议，
+[^footnote]: 想对http2.0有更深的了解可以转至&lt;a href=&quot;http://www.alloyteam.com/2015/03/http2-0-di-qi-miao-ri-chang/&quot;&gt;HTTP2.0的奇妙日常&lt;/a&gt;。
+   一个好的习惯是将我们需要安装的软件源码包放置在一个固定区域，以便日后的寻找,这也是一个运维人的基本素养。我习惯将软件包放置在&lt;strong&gt;/usr/local/src&lt;/strong&gt;下，通过下面的命令创建并进入&lt;strong&gt;/usr/local/src&lt;/strong&gt;目录。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; /usr/local/src &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /usr/local/src 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;   现在我们要下载nginx和php的源码包。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget http://nginx.org/download/nginx-1.12.0.tar.gz &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; wget http://cn2.php.net/distributions/php-7.1.4.tar.gz 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;   但是我们为了让php支持更多的编码，还需要安装libiconv包,我们通过：&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;   至此我们的准备工作就完成了。接下来我们就开始安装了。&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;h2 id=&quot;安装php&quot;&gt;安装php&lt;/h2&gt;
+&lt;h4 id=&quot;1安装libiconv库&quot;&gt;1.安装libiconv库&lt;/h4&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /usr/local/src 
+&lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;zxvf libiconv-1.15.tar.gz
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;libiconv-1.15/
+./configure &lt;span class=&quot;nt&quot;&gt;--prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local
+make &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; make &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;   安装好了之后，我们还需要将libiconv加入动态库环境中，自建一个动态库配置文件。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;vi /etc/ld.so.conf.d/libiconv.conf
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;   文件中输入：&lt;/p&gt;
+
+&lt;div class=&quot;language-conf highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/&lt;span class=&quot;n&quot;&gt;usr&lt;/span&gt;/&lt;span class=&quot;n&quot;&gt;local&lt;/span&gt;/&lt;span class=&quot;n&quot;&gt;lib&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;   退出该文件，并在命令行执行&lt;code class=&quot;highlighter-rouge&quot;&gt;ldconfig&lt;/code&gt;重新读取下配置文件。&lt;/p&gt;
+
+&lt;h4 id=&quot;2安装php&quot;&gt;2.安装php&lt;/h4&gt;
+&lt;p&gt;首先安装php，我们需要添加编译参数，注意&lt;code class=&quot;highlighter-rouge&quot;&gt;--with-fpm-user=nobody --with-fpm-group=nobody&lt;/code&gt;此处是配置php-fpm的用户和用户组&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /usr/local/src
+&lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;zxvf php-7.1.4.tar.gz
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;php-7.1.4/
+&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; /usr/local/php-7.1.4/
+./configure &lt;span class=&quot;nt&quot;&gt;--prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/mydata/server/php-7.1.4 &lt;span class=&quot;nt&quot;&gt;--with-config-file-path&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/mydata/server/php-7.1.4/etc &lt;span class=&quot;nt&quot;&gt;--with-mysqli&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mysqlnd &lt;span class=&quot;nt&quot;&gt;--with-pdo-mysql&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mysqlnd &lt;span class=&quot;nt&quot;&gt;--with-iconv-dir&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local &lt;span class=&quot;nt&quot;&gt;--with-freetype-dir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-jpeg-dir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-png-dir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-zlib&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-libxml-dir&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr &lt;span class=&quot;nt&quot;&gt;--enable-xml&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--disable-rpath&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-bcmath&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-shmop&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-sysvsem&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-inline-optimization&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-curl&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-mbregex&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-fpm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-fpm-user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;wwwdata &lt;span class=&quot;nt&quot;&gt;--with-fpm-group&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;wwwdata &lt;span class=&quot;nt&quot;&gt;--enable-mbstring&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-mcrypt&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-gd&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-gd-native-ttf&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-openssl&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-mhash&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-pcntl&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-sockets&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-xmlrpc&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-zip&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--enable-soap&lt;/span&gt;
+make &lt;span class=&quot;nv&quot;&gt;ZEND_EXTRA_LIBS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'-liconv'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; make &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;   安装之后我们需要设置配置文件,由于php已经有预设的配置文档所以我们之间采用预设配置，视情况您可以自己修改配置文档。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;mv&lt;/span&gt; /usr/local/src/php-7.1.4/php.ini-production  /usr/local/php-7.1.4/etc/php.ini
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /usr/local/php-7.1.4/etc
+&lt;span class=&quot;nb&quot;&gt;mv &lt;/span&gt;php-fpm.conf.default php-fpm.conf
+&lt;span class=&quot;nb&quot;&gt;mv&lt;/span&gt; ./php-fpm.d/www.conf.default ./php-fpm.d/www.conf
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;   至此php和php-fpm（用于和web服务器，如nginx等服务器连接）都已经安装并配置好了。&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;h4 id=&quot;3安装并配置nginx&quot;&gt;3.安装并配置nginx&lt;/h4&gt;
+&lt;p&gt;我们先来解压安装nginx，我们注意到&lt;code class=&quot;highlighter-rouge&quot;&gt;--user=nobody --group=nobody&lt;/code&gt;，同理我们首先创建名为www的用户及用户组，然后再编译安装nginx。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /usr/local/src
+&lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;zxvf nginx-1.12.0.tar.gz
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;nginx-1.12.0/
+./configure &lt;span class=&quot;nt&quot;&gt;--user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;nobody &lt;span class=&quot;nt&quot;&gt;--group&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;nobody &lt;span class=&quot;nt&quot;&gt;--prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/mydata/server/nginx-1.12.0 &lt;span class=&quot;nt&quot;&gt;--with-http_stub_status_module&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--with-http_ssl_module&lt;/span&gt;
+make &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; make &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 做个软连接为了以后升级&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;ln&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; /mydata/server/nginx-1.12.0 /usr/local/nginx
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;安装完成后，我们还需要配置nginx的配置文件&lt;code class=&quot;highlighter-rouge&quot;&gt;vi  /usr/local/nginxconf/nginx.conf&lt;/code&gt;，按照以下配置文件内容进行配置。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#user 要和刚刚编译安装时的参数:&quot;--user=nobody --group=nobody&quot;对应&lt;/span&gt;
+user  nobody nobody&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+worker_processes  8&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+worker_rlimit_nofile 65535&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;#error_log  logs/error.log;&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#error_log  logs/error.log  notice;&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#error_log  logs/error.log  info;&lt;/span&gt;
+error_log  /data/logs/nginx_error.log  crit&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+pid        /usr/local/nginx-1.12.0/nginx.pid&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+events
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  use epoll&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  worker_connections 65535&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+
+http &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    include       mime.types&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    default_type  application/octet-stream&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    server_names_hash_bucket_size 128&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    client_header_buffer_size 32k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    large_client_header_buffers 4 32k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    client_max_body_size 8m&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    sendfile        on&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;c&quot;&gt;#keepalive_timeout  0;&lt;/span&gt;
+    keepalive_timeout  60&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    tcp_nopush     on&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_connect_timeout 300&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_send_timeout 300&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_read_timeout 300&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_buffer_size 64k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_buffers 4 64k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_busy_buffers_size 128k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_temp_file_write_size 128k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    
+    &lt;span class=&quot;nb&quot;&gt;gzip  &lt;/span&gt;on&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    gzip_min_length  1k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    gzip_buffers     4 16k&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    gzip_http_version 1.0&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    gzip_comp_level 2&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    gzip_types       text/plain application/x-javascript text/css application/xml&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    gzip_vary on&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    log_format  page  &lt;span class=&quot;s1&quot;&gt;'\$remote_addr - \$remote_user [\$time_local] [\$request_time] &quot;\$request&quot;'&lt;/span&gt;
+              &lt;span class=&quot;s1&quot;&gt;'\$status \$body_bytes_sent &quot;\$http_referer&quot;'&lt;/span&gt;
+              &lt;span class=&quot;s1&quot;&gt;'&quot;\$http_user_agent&quot; \$http_x_forwarded_for'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    access_log  /mydata/logs/page.log  page&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    
+    include vhosts/&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.conf 
+    
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;还要设置fcgi.conf , &lt;code class=&quot;highlighter-rouge&quot;&gt;vi /usr/local/nginx/conf/fcgi.conf&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;fastcgi_param  GATEWAY_INTERFACE  CGI/1.1&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  SERVER_SOFTWARE    nginx&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+fastcgi_param  QUERY_STRING       &lt;span class=&quot;nv&quot;&gt;$query_string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  REQUEST_METHOD     &lt;span class=&quot;nv&quot;&gt;$request_method&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  CONTENT_TYPE       &lt;span class=&quot;nv&quot;&gt;$content_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  CONTENT_LENGTH     &lt;span class=&quot;nv&quot;&gt;$content_length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+fastcgi_param  SCRIPT_FILENAME    &lt;span class=&quot;nv&quot;&gt;$document_root$fastcgi_script_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  SCRIPT_NAME        &lt;span class=&quot;nv&quot;&gt;$fastcgi_script_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  REQUEST_URI        &lt;span class=&quot;nv&quot;&gt;$request_uri&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  DOCUMENT_URI       &lt;span class=&quot;nv&quot;&gt;$document_uri&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  DOCUMENT_ROOT      &lt;span class=&quot;nv&quot;&gt;$document_root&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  SERVER_PROTOCOL    &lt;span class=&quot;nv&quot;&gt;$server_protocol&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+fastcgi_param  REMOTE_ADDR        &lt;span class=&quot;nv&quot;&gt;$remote_addr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  REMOTE_PORT        &lt;span class=&quot;nv&quot;&gt;$remote_port&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  SERVER_ADDR        &lt;span class=&quot;nv&quot;&gt;$server_addr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  SERVER_PORT        &lt;span class=&quot;nv&quot;&gt;$server_port&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+fastcgi_param  SERVER_NAME        &lt;span class=&quot;nv&quot;&gt;$server_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# PHP only, required if PHP was built with --enable-force-cgi-redirect&lt;/span&gt;
+fastcgi_param  REDIRECT_STATUS    200&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;配置虚拟主机 &lt;code class=&quot;highlighter-rouge&quot;&gt;vi /usr/local/nginx-1.14.0/conf/vhosts/test.conf&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;server
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  listen      80&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 
+  server_name  localhost&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  index index.html index.htm index.php&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  root  /mydata/www/taobao/public&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(!&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$request_filename&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    rewrite ^&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;.&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; /index.php?&lt;span class=&quot;nv&quot;&gt;$1&lt;/span&gt; last&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  location ~ ^&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;.&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\/\.&lt;/span&gt;svn&lt;span class=&quot;se&quot;&gt;\/&lt;/span&gt; 
+  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    deny all&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  location ~ ^&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;.&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\/&lt;/span&gt;phpinfo.php
+  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    deny all&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  location ~ .&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;php|php5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;?&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;    
+    &lt;span class=&quot;c&quot;&gt;# fastcgi_pass  unix:/tmp/php-cgi.sock;&lt;/span&gt;
+    fastcgi_pass  qcloud_server001&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    fastcgi_index index.php&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    include fcgi.conf&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;   
+
+  location ~ .&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;gif|jpg|jpeg|png|bmp|swf&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;   
+    expires      30d&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    access_log   off&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;   
+
+  location ~ .&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;js|css&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;?&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;   
+    expires      1h&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 
+    access_log   off&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;    
+
+  access_log  off&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;安装完后，我们需要测试配置文件是否正确&lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/nginx-1.12.0/sbin/nginx -t&lt;/code&gt; 如下显示表示配置文件成功&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;media/14926676625028/14932869263238.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;h3 id=&quot;启动测试phpnginx&quot;&gt;启动、测试php+nginx&lt;/h3&gt;
+&lt;p&gt;   运行php-fpm,使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/php-7.1.4/sbin/php-fpm&lt;/code&gt; 我们只需要通过&lt;code class=&quot;highlighter-rouge&quot;&gt;netstat -tunlp |grep php-fpm|grep -v grep&lt;/code&gt;就可以看到
+&lt;img src=&quot;media/14926676625028/14932887644685.jpg&quot; alt=&quot;&quot; /&gt;
+   这样的查询方式是很有用的，尤其是查询服务端口，进程（同常我们都是通过ps查询进程，但用这个也可看到，796就是我现在php-fpm的进程号），以及服务是否监听了端口。
+   运行nginx，我们通过&lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/nginx-1.12.0/sbin/nginx&lt;/code&gt;就可以开启nginx，同理我们查看端口是否被监听（nginx默认80端口）：&lt;img src=&quot;media/14926676625028/14932891024213.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 06 May 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/05/06/%E8%85%BE%E8%AE%AF%E4%BA%91%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85Nginx1.12.0+php7.1.4.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/05/06/%E8%85%BE%E8%AE%AF%E4%BA%91%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85Nginx1.12.0+php7.1.4.html</guid>
+        
+        
+      </item>
     
   </channel>
 </rss>

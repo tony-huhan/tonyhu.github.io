@@ -8,7 +8,7 @@ description: > # this means to ignore newlines until "baseurl:"
   New Site
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://blog.tonyhu.cn" # the base hostname & protocol for your site
-copyright: 2017 Whatever Company, Inc. All Rights Reserved.
+copyright: 2017. All Rights Reserved.
 
 # Build settings
 markdown: kramdown
