@@ -23,3 +23,4 @@ phone: +86 188-5004-6315
 # Tracking
 googleAnalitycsID: UA-83933844-1
 
+permalink: /:year/:month/:day/:title
