@@ -3,7 +3,7 @@ layout: page
 title: 关于我 
 ---
 
-一个 iOS SDK 开发者，喜欢研究一些新技术。
+一个 linux 爱好者，PHP开发员、linux运维
 <p>
 平时喜欢整理个人博客，逛逛技术论坛。
 <p>
@@ -29,7 +29,7 @@ title: 关于我
 
 <p> 
 
-博客源码在 <a target="_blank" href='https://github.com/leopardpan/leopardpan.github.io/'>Github</a> 上，你的 Star 是我更新的动力，谢谢~
+博客源码在 <a target="_blank" href='https://github.com/tony-huhan/tonyhu.github.io/'>Github</a> 上，你的 Star 是我更新的动力，谢谢~
 
 <p> 
 
