@@ -1,6 +1,5 @@
 # Site settings
 # in the templates available like {{ site.myvariable }}.
-title: Clean portfolio theme for Jekyll powered by Bootstrap 4.
 email: h648637692@gmail.com
 brand: Hu Han
 headline: Inventor, Engineer and Futurist
