@@ -10,9 +10,8 @@ url: "http://blog.tonyhu.cn"
 
 # Comment
 comment:
-    disqus: huhan
+    disqus: tonyhu
     # uyan: 2143225  # 有言id,登录有言官网申请
-
 # Social
 social:
     weibo: 648637692
